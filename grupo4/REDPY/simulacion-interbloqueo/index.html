@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulación de Interbloqueo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Simulación de Interbloqueo</h1>
+
+<div class="proceso" id="proceso1">Proceso 1</div>
+<div class="proceso" id="proceso2">Proceso 2</div>
+
+<div class="recurso libre" id="impresora">🖨️ Impresora (Libre)</div>
+<div class="recurso libre" id="escaner">📠 Escáner (Libre)</div>
+
+<div class="log" id="log">Estado: Esperando iniciar...</div>
+
+<button onclick="iniciarInterbloqueo()">Simular Interbloqueo</button>
+<button onclick="iniciarSolucion()">Simular Solución</button>
+
+<script src="interbloqueo.js"></script>
+<script src="solucion.js"></script>
+</body>
+</html>

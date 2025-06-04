@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sincronización de Relojes - Cliente Web</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0px 0px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #3366cc;
+        }
+        .stat {
+            margin: 10px 0;
+            font-size: 1.2em;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.05);
+        }
+        .buttons button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .start-btn { background-color: #4CAF50; color: white; }
+        .stop-btn { background-color: #f44336; color: white; }
+        .once-btn { background-color: #2196F3; color: white; }
+        canvas { margin-top: 30px; }
+        .descripcion {
+            background-color: #eaf2fb;
+            padding: 15px;
+            border-left: 5px solid #2196F3;
+            margin: 25px 0;
+            font-size: 1em;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🕘 Sincronización de Relojes (Versión Web)</h1>
+    <p>Este sistema sincroniza el reloj del cliente con un servidor usando el algoritmo de Cristian.</p>
+
+    <div class="buttons">
+        <button class="start-btn" onclick="activarSincronizacion()">▶ Activar sincronización</button>
+        <button class="stop-btn" onclick="detenerSincronizacion()">⏹ Detener</button>
+        <button class="once-btn" onclick="sincronizar()">🔄 Sincronizar una vez</button>
+    </div>
+
+    <div class="descripcion">
+        <strong>Explicación:</strong><br>
+        Este cliente web solicita la hora a un servidor de tiempo y calcula:
+        <ul style="text-align:left; display:inline-block; font-size: 0.95em;">
+            <li><strong>📶 Retardo:</strong> tiempo estimado en que la solicitud va y vuelve.</li>
+            <li><strong>✅ Hora sincronizada:</strong> hora del servidor ajustada por retardo.</li>
+            <li><strong>📊 Diferencia:</strong> cuánto difiere el reloj local del cliente respecto al sincronizado.</li>
+        </ul>
+    </div>
+
+    <div class="stat" id="horaLocal"></div>
+    <div class="stat" id="horaServidor"></div>
+    <div class="stat" id="horaSinc"></div>
+    <div class="stat" id="retardo"></div>
+    <div class="stat" id="diferencia"></div>
+    <canvas id="grafico" width="800" height="300"></canvas>
+</div>
+
+<script>
+    let intervalo;
+    const retardoData = [];
+    const diferenciaData = [];
+    const etiquetas = [];
+
+    const ctx = document.getElementById('grafico').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: etiquetas,
+            datasets: [
+                {
+                    label: '📶 Retardo (s)',
+                    data: retardoData,
+                    borderColor: 'royalblue',
+                    backgroundColor: 'rgba(65,105,225,0.2)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4
+                },
+                {
+                    label: '📊 Diferencia Hora Local vs Sincronizada (s)',
+                    data: diferenciaData,
+                    borderColor: 'darkorange',
+                    backgroundColor: 'rgba(255,165,0,0.4)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Estadísticas de sincronización en tiempo real' }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    async function sincronizar() {
+        const T0 = Date.now();
+        const respuesta = await fetch('/hora');
+        const T1 = Date.now();
+
+        const horaServidor = new Date(await respuesta.text());
+        const retardo = (T1 - T0) / 2;
+        const horaSincronizada = new Date(horaServidor.getTime() + retardo);
+        const horaLocal = new Date();
+        const diferencia = Math.abs(horaLocal.getTime() - horaSincronizada.getTime()) / 1000;
+
+        document.getElementById('horaLocal').textContent = "🕓 Hora Local del Cliente: " + horaLocal.toISOString();
+        document.getElementById('horaServidor').textContent = "🕒 Hora del Servidor: " + horaServidor.toISOString();
+        document.getElementById('horaSinc').textContent = "✅ Hora Sincronizada: " + horaSincronizada.toISOString();
+        document.getElementById('retardo').textContent = "📶 Retardo estimado: " + (retardo / 1000).toFixed(6) + " segundos";
+        document.getElementById('diferencia').textContent = "📊 Diferencia con hora local: " + diferencia.toFixed(6) + " segundos";
+
+        etiquetas.push(new Date().toLocaleTimeString());
+        retardoData.push((retardo / 1000).toFixed(6));
+        diferenciaData.push(diferencia.toFixed(6));
+
+        chart.update();
+    }
+
+    function activarSincronizacion() {
+        if (!intervalo) {
+            sincronizar();
+            intervalo = setInterval(sincronizar, 5000);
+        }
+    }
+
+    function detenerSincronizacion() {
+        clearInterval(intervalo);
+        intervalo = null;
+    }
+</script>
+</body>
+</html>

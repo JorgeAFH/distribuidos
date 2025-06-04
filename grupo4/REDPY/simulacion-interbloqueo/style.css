@@ -1,0 +1,45 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+  background: #f2f2f2;
+}
+
+.proceso, .recurso {
+  border: 2px solid #000;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 10px auto;
+  width: 250px;
+}
+
+.proceso {
+  background: #e6f7ff;
+}
+
+.recurso.libre {
+  background: #d4edda;
+}
+
+.recurso.ocupado {
+  background: #f8d7da;
+}
+
+.log {
+  margin-top: 20px;
+  font-weight: bold;
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  padding: 10px;
+  border-radius: 5px;
+  width: 60%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+button {
+  margin: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+

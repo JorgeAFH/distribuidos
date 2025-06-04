@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simulación de Reloj de Lamport</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f0f0f0; }
+    #log { background: #fff; padding: 10px; border: 1px solid #ccc; height: 300px; overflow-y: auto; white-space: pre-line; }
+    button { padding: 10px 20px; margin-right: 10px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>Simulación de Reloj de Lamport</h2>
+  <div id="log"></div>
+  <button onclick="runSimulation(false)">Ejecutar SIN sincronización</button>
+  <button onclick="runSimulation(true)">Ejecutar CON sincronización</button>
+
+  <script>
+   // Clase para representar el reloj lógico de Lamport 
+    class LamportClock {
+      constructor() {
+        this.time = 0;
+      }
+      tick() {
+        this.time += 1;
+        return this.time;
+      }
+      update(receivedTime) {
+        this.time = Math.max(this.time, receivedTime) + 1;
+        return this.time;
+      }
+    }
+
+    let ticketAvailable = true;
+    let lock = false; // Simulación de lock para sincronización
+
+    function log(message) {
+      const logDiv = document.getElementById("log");
+      logDiv.innerText += message + "\n";
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function attemptPurchase(serverName, clockTime, elapsedTime, useSync) {
+      if (useSync) {
+        // Versión con sincronización
+        if (lock) {
+          log(`[${clockTime}] ${serverName} no puede comprar. Recurso bloqueado. (CON sincronización)`);
+          return;
+        }
+
+        lock = true;
+        if (ticketAvailable) {
+          ticketAvailable = false;
+          log(`[${clockTime}] ${serverName} compra el boleto CON sincronización. Tiempo: ${elapsedTime.toFixed(4)} segundos.`);
+        } else {
+          log(`[${clockTime}] ${serverName} ya no puede comprar. Boleto vendido. (CON sincronización)`);
+        }
+        lock = false;
+      } else {
+        // Versión sin sincronización (simulamos condición de carrera)
+        setTimeout(() => {
+          if (ticketAvailable) {
+            log(`[${clockTime}] ${serverName} compra el boleto SIN sincronización. Tiempo: ${elapsedTime.toFixed(4)} segundos.`);
+            setTimeout(() => {
+              ticketAvailable = false;
+            }, 100); // Tiempo artificial de uso del recurso
+          } else {
+            log(`[${clockTime}] ${serverName} ya no puede comprar. Boleto vendido. (SIN sincronización)`);
+          }
+        }, 200);  // Introduce una pequeña demora para simular desorden
+      }
+    }
+
+    function serverBehavior(serverName, clock, delay, useSync) {
+      setTimeout(() => {
+        for (let i = 0; i < 2; i++) {
+          const t = clock.tick();
+          log(`[${t}] ${serverName} ejecutó un evento local.`);
+        }
+
+        const startTime = Date.now();
+        const sentTime = clock.tick();
+        log(`[${sentTime}] ${serverName} intenta comprar el boleto...`);
+
+        const receivedTime = clock.update(sentTime);
+        const elapsedTime = (Date.now() - startTime) / 1000;
+
+        attemptPurchase(serverName, receivedTime, elapsedTime, useSync);
+      }, delay);
+    }
+
+    function runSimulation(useSync) {
+      document.getElementById("log").innerText = "";
+      ticketAvailable = true;
+      lock = false;
+
+      const clockA = new LamportClock();
+      const clockB = new LamportClock();
+
+      serverBehavior("Servidor A", clockA, 0, useSync);
+      serverBehavior("Servidor B", clockB, 0, useSync);
+    }
+  </script>
+</body>
+</html>
